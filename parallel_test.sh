@@ -146,75 +146,13 @@ do
     #done
 
     ##lentenc
-    for thread in {1,2,4,8}
-    do
-        cur=0
-        cnt=0
-        sar 1 > $cpuinfo.par$count.lentenc.t$thread &
-        sar -r 1 > $meminfo.par$count.lentenc.t$thread &
-        echo "">$timeinfo.par$count.lentenc.t$thread
-        rm -rf $output/*.mp4
-        for (( index=0;index<${#files[@]};index=index+count ))
-        do
-        	if [ $(echo "$index+$count"|bc) -lt ${#files[@]} ]
-        	then
-        	    length=$count
-        	else
-        	    length=$(echo "${#files[@]}-$index"|bc)
-        	fi
-            	inputopt=""
-    		outputopt=""
-        	for (( i=0;i<length;i++ ))
-        	do
-    	   	     file=${files[i+index]}
-            	    input_info=$( getVideoMeta $file )
-    	            if [[ $? -ne 0  ]]
-    	            then
-    	                echo "$ffprobe_bin -v error -of flat=s=_ -select_streams v:0 -show_entries stream=r_frame_rate $file " >&2
-    	                continue
-    	            fi
-    	            source_bitrate=`echo $input_info | xargs -n1 | grep "bit_rate" | awk 'BEGIN{FS="="} {print $2}'`
-    	    	    inputopt=$inputopt" $duration -i $file"
-    	   	    outputopt=$outputopt" -c:v liblenthevc -maxrate $(echo "$source_bitrate*0.45"|bc) -threads $thread -map $i $output/$(echo $file | cut -d / -f 4)"
-    	   	    (( cnt++ ))
-    		done
-        	spt=` { time ffmpegSoftEncodingLentenc "$inputopt" "$outputopt"; } 2>&1 `
-        	r=`echo "$spt"| grep "real" | cut -f 2`
-        	u=`echo "$spt"| grep "user" | cut -f 2`
-        	s=`echo "$spt"| grep "sys" | cut -f 2`
-        	
-        	a=$(echo "$(echo $r | cut -d m -f 1)*60"|bc)
-        	b=$(echo "$(echo $r | cut -d m -f 2 | cut -d s -f 1)"|bc)
-        	lentencreal=$(echo "$a + $b"|bc)
-        	
-        	a=$(echo "$(echo $u | cut -d m -f 1)*60"|bc)
-        	b=$(echo "$(echo $u | cut -d m -f 2 | cut -d s -f 1)"|bc)
-        	lentencuser=$(echo "$a + $b"|bc)
-        	
-        	a=$(echo "$(echo $s | cut -d m -f 1)*60"|bc)
-        	b=$(echo "$(echo $s | cut -d m -f 2 | cut -d s -f 1)"|bc)
-        	lentencsys=$(echo "$a + $b"|bc)
-        
-        	echo $lentencreal $lentencuser $lentencsys >> $timeinfo.par$count.lentenc.t$thread
-        	#rm -rf $output/$(echo $file|cut -d / -f 3 | cut -d . -f 1).265
-        done
-        echo "------------lentenc------------"
-        echo "count of videos:$cnt"
-        echo "threads:$thread"
-        echo "task:$count"
-        getCPUinfo $cpuinfo.par$count.lentenc.t$thread
-        getMEMinfo $meminfo.par$count.lentenc.t$thread
-        getTIMEinfo $timeinfo.par$count.lentenc.t$thread
-    done
-    
-    ##intel264
     #for thread in {1,2,4,8}
     #do
     #    cur=0
     #    cnt=0
-    #    sar 1 > $cpuinfo.par$count.intel264.t$thread &
-    #    sar -r 1 > $meminfo.par$count.intel264.t$thread &
-    #    echo "">$timeinfo.par$count.intel264.t$thread
+    #    sar 1 > $cpuinfo.par$count.lentenc.t$thread &
+    #    sar -r 1 > $meminfo.par$count.lentenc.t$thread &
+    #    echo "">$timeinfo.par$count.lentenc.t$thread
     #    rm -rf $output/*.mp4
     #    for (( index=0;index<${#files[@]};index=index+count ))
     #    do
@@ -224,11 +162,11 @@ do
     #    	else
     #    	    length=$(echo "${#files[@]}-$index"|bc)
     #    	fi
-    #		inputopt=""
+    #        	inputopt=""
     #		outputopt=""
-    #    	for(( i=0;i<length;i++ ))
+    #    	for (( i=0;i<length;i++ ))
     #    	do
-    #    	    file=${files[i+index]}
+    #	   	     file=${files[i+index]}
     #        	    input_info=$( getVideoMeta $file )
     #	            if [[ $? -ne 0  ]]
     #	            then
@@ -237,38 +175,100 @@ do
     #	            fi
     #	            source_bitrate=`echo $input_info | xargs -n1 | grep "bit_rate" | awk 'BEGIN{FS="="} {print $2}'`
     #	    	    inputopt=$inputopt" $duration -i $file"
-    #	    	    outputopt=$outputopt" -c:v h264_qsv -maxrate $(echo "$source_bitrate*0.45"|bc) -threads $thread -map $i $output/$(echo $file | cut -d / -f 4)"
-    #    	    (( cnt++ ))
-    #    	done
-    #    	spt=` { time hardEncodingIntel264 "$inputopt" "$outputopt"; } 2>&1 `
+    #	   	    outputopt=$outputopt" -c:v liblenthevc -maxrate $(echo "$source_bitrate*0.45"|bc) -threads $thread -map $i $output/$(echo $file | cut -d / -f 4)"
+    #	   	    (( cnt++ ))
+    #		done
+    #    	spt=` { time ffmpegSoftEncodingLentenc "$inputopt" "$outputopt"; } 2>&1 `
     #    	r=`echo "$spt"| grep "real" | cut -f 2`
     #    	u=`echo "$spt"| grep "user" | cut -f 2`
     #    	s=`echo "$spt"| grep "sys" | cut -f 2`
     #    	
     #    	a=$(echo "$(echo $r | cut -d m -f 1)*60"|bc)
     #    	b=$(echo "$(echo $r | cut -d m -f 2 | cut -d s -f 1)"|bc)
-    #    	intelreal264=$(echo "$a + $b"|bc)
+    #    	lentencreal=$(echo "$a + $b"|bc)
     #    	
     #    	a=$(echo "$(echo $u | cut -d m -f 1)*60"|bc)
     #    	b=$(echo "$(echo $u | cut -d m -f 2 | cut -d s -f 1)"|bc)
-    #    	inteluser264=$(echo "$a + $b"|bc)
+    #    	lentencuser=$(echo "$a + $b"|bc)
     #    	
     #    	a=$(echo "$(echo $s | cut -d m -f 1)*60"|bc)
     #    	b=$(echo "$(echo $s | cut -d m -f 2 | cut -d s -f 1)"|bc)
-    #    	intelsys264=$(echo "$a + $b"|bc)
+    #    	lentencsys=$(echo "$a + $b"|bc)
     #    
-    #    	echo $intelreal264 $inteluser264 $intelsys264 >> $timeinfo.par$count.intel264.t$thread
-    #    	#rm -rf $output/$(echo $file|cut -d / -f 3|cut -d . -f 1).264
+    #    	echo $lentencreal $lentencuser $lentencsys >> $timeinfo.par$count.lentenc.t$thread
+    #    	#rm -rf $output/$(echo $file|cut -d / -f 3 | cut -d . -f 1).265
     #    done
-    #    
-    #    echo "------------intel264-------------"
+    #    echo "------------lentenc------------"
     #    echo "count of videos:$cnt"
     #    echo "threads:$thread"
     #    echo "task:$count"
-    #    getCPUinfo $cpuinfo.par$count.intel264.t$thread
-    #    getMEMinfo $meminfo.par$count.intel264.t$thread
-    #    getTIMEinfo $timeinfo.par$count.intel264.t$thread
+    #    getCPUinfo $cpuinfo.par$count.lentenc.t$thread
+    #    getMEMinfo $meminfo.par$count.lentenc.t$thread
+    #    getTIMEinfo $timeinfo.par$count.lentenc.t$thread
     #done
+    
+    #intel264
+    for thread in {1,2,4,8}
+    do
+        cur=0
+        cnt=0
+        sar 1 > $cpuinfo.par$count.intel264.t$thread &
+        sar -r 1 > $meminfo.par$count.intel264.t$thread &
+        echo "">$timeinfo.par$count.intel264.t$thread
+        rm -rf $output/*.mp4
+        for (( index=0;index<${#files[@]};index=index+count ))
+        do
+        	if [ $(echo "$index+$count"|bc) -lt ${#files[@]} ]
+        	then
+        	    length=$count
+        	else
+        	    length=$(echo "${#files[@]}-$index"|bc)
+        	fi
+    		inputopt=""
+    		outputopt=""
+        	for(( i=0;i<length;i++ ))
+        	do
+        	    file=${files[i+index]}
+            	    input_info=$( getVideoMeta $file )
+    	            if [[ $? -ne 0  ]]
+    	            then
+    	                echo "$ffprobe_bin -v error -of flat=s=_ -select_streams v:0 -show_entries stream=r_frame_rate $file " >&2
+    	                continue
+    	            fi
+    	            source_bitrate=`echo $input_info | xargs -n1 | grep "bit_rate" | awk 'BEGIN{FS="="} {print $2}'`
+    	    	    inputopt=$inputopt" $duration -i $file"
+    	    	    outputopt=$outputopt" -c:v h264_qsv -maxrate $(echo "$source_bitrate*0.45"|bc) -threads $thread -map $i $output/$(echo $file | cut -d / -f 4)"
+        	    (( cnt++ ))
+        	done
+        	spt=` { time hardEncodingIntel264 "$inputopt" "$outputopt"; } 2>&1 `
+        	r=`echo "$spt"| grep "real" | cut -f 2`
+        	u=`echo "$spt"| grep "user" | cut -f 2`
+        	s=`echo "$spt"| grep "sys" | cut -f 2`
+        	
+        	a=$(echo "$(echo $r | cut -d m -f 1)*60"|bc)
+        	b=$(echo "$(echo $r | cut -d m -f 2 | cut -d s -f 1)"|bc)
+        	intelreal264=$(echo "$a + $b"|bc)
+        	
+        	a=$(echo "$(echo $u | cut -d m -f 1)*60"|bc)
+        	b=$(echo "$(echo $u | cut -d m -f 2 | cut -d s -f 1)"|bc)
+        	inteluser264=$(echo "$a + $b"|bc)
+        	
+        	a=$(echo "$(echo $s | cut -d m -f 1)*60"|bc)
+        	b=$(echo "$(echo $s | cut -d m -f 2 | cut -d s -f 1)"|bc)
+        	intelsys264=$(echo "$a + $b"|bc)
+        
+        	echo $intelreal264 $inteluser264 $intelsys264 >> $timeinfo.par$count.intel264.t$thread
+        	#rm -rf $output/$(echo $file|cut -d / -f 3|cut -d . -f 1).264
+        done
+        
+        echo "------------intel264-------------"
+        echo "count of videos:$cnt"
+        echo "threads:$thread"
+        echo "task:$count"
+        getCPUinfo $cpuinfo.par$count.intel264.t$thread
+        getMEMinfo $meminfo.par$count.intel264.t$thread
+        getTIMEinfo $timeinfo.par$count.intel264.t$thread
+    done
     #
     #
     ###intel265
